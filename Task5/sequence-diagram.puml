@@ -1,0 +1,27 @@
+@startuml
+actor User
+participant "MES API" as API
+participant "Redis Cache" as Redis
+participant "Database" as DB
+
+== Чтение списка заказов ==
+User -> API: запрос списка заказов
+API -> Redis: получить список заказов
+alt Кеш найден
+    Redis --> API: вернуть список
+    API --> User: отдать список
+else Кеш не найден
+    Redis --> API: нет данных
+    API -> DB: запрос списка заказов
+    DB --> API: вернуть список
+    API -> Redis: сохранить список в кеш (с TTL)
+    API --> User: отдать список
+end
+
+== Изменение статуса заказа ==
+User -> API: изменить статус заказа
+API -> DB: обновить статус
+DB --> API: подтверждение
+API -> Redis: удалить/обновить кеш по ключу заказа
+API --> User: подтвердить изменение
+@enduml
